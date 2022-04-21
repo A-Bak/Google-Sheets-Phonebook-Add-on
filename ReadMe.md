@@ -6,6 +6,29 @@ This add-on allows the users to more easily substitute phone numbers with corres
 ## Installation
 ---
 
+The add-on is currently under review in the Google Marketplace and it will most likely be under review for the foreseeable future.
+Therefore, it is not possible to install it through the marketplace
+
+![Add-on is under review](/resources/installation/under_review.png)
+
+Alternative installation:
+
+1. (Optional) Download a release version of the add-on
+2. Open Google Sheets
+3. Open Google Apps Scripts (located in the `Extensions` menu on the toolbar)
+4. Copy the entire contents of `Phonebook.gs`
+5. Replace the `function myFunction()` in `Code.gs` with the contents of `Phonebook.gs`
+6. Reload Google Sheets (it might take more than one try)
+7. Done
+
+Note: The script will only work for the specific Google Sheet. You will have to repeat this process for different sheets.
+
+![Step 4](/resources/installation/step_4.png)
+![Step 5-1](/resources/installation/step_5_1.png)
+![Step 5-2](/resources/installation/step_5_2.png)
+![Step 6](/resources/installation/step_6.png)
+
+
 ## Usage
 ---
 In order to use this add-on you need to create a separate sheet containing pairs of phone numbers and names that will act as a 'phonebook'. This sheet will be used by the add-on as a reference to know which phone numbers need to be replaced in a subpoena. The pairs of `[Number, Name]` must be located in the first two columns of this sheet without any empty rows.
