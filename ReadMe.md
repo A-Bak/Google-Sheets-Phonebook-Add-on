@@ -1,4 +1,4 @@
-# NoPixel Phonebook Add-on
+# Google Sheets Phonebook Add-on
 ---
 
 This add-on allows the users to more easily substitute phone numbers with corresponding names in a Google Sheets document. Its main purpouse is to allow users to receive a readable form of a phone subpoena utilizing a pre-existent set of phone numbers and names.
