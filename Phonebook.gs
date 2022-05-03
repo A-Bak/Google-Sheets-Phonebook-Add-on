@@ -45,11 +45,11 @@ class Phonebook {
     let values = range.getValues();
 
     for (let i = 0; i < values.length; i++) {
-      values[i][0] = this.replace(values[i][0])
-      values[i][1] = this.replace(values[i][1])
+      values[i][0] = this.replace(values[i][0]);
+      values[i][1] = this.replace(values[i][1]);
     }
 
-    range.setValues(values)
+    range.setValues(values);
   }
   
   /**
@@ -69,16 +69,22 @@ class Phonebook {
    * Method serialized Phonebook object to a JSON string.
    */
   toJSON() {
-    return JSON.stringify(this.phoneNumberDict)
+    return JSON.stringify(this.phoneNumberDict);
   }
 
   /**
    * Method deserializes Phonebook object from a JSON string.
    */
   fromJSON(jsonString) {
-    this.phoneNumberDict = jsonString
+    this.phoneNumberDict = jsonString;
   }
 }
+
+
+/*******************************************************************************
+*                       Save/Load Phonebook Between Calls
+********************************************************************************/
+
 
 /**
  * Function sets the script property 'selectedPhoneBook' to provided
@@ -86,9 +92,13 @@ class Phonebook {
  */
 function setSelectedPhonebook(phonebook) {
   let scriptProperties = PropertiesService.getScriptProperties();
-  let jsonString = phonebook.toJSON();
-  Logger.log(jsonString);
-  scriptProperties.setProperty('selectedPhoneBook', jsonString);
+  
+  if (phonebook != EMPTY_PHONEBOOK) {
+    scriptProperties.setProperty('selectedPhoneBook', phonebook.toJSON());
+  }
+  else {
+    scriptProperties.setProperty('selectedPhoneBook', EMPTY_PHONEBOOK);
+  }
 }
 
 /**
@@ -97,8 +107,16 @@ function setSelectedPhonebook(phonebook) {
  */
 function getSelectedPhonebook() {
   let scriptProperties = PropertiesService.getScriptProperties();
-  let jsonString = scriptProperties.getProperty('selectedPhoneBook');
-  return JSON.parse(jsonString)
+  let selectedPhoneBookValue = scriptProperties.getProperty('selectedPhoneBook');
+
+  if (selectedPhoneBookValue != EMPTY_PHONEBOOK) {
+    let phonebook = new Phonebook();
+    phonebook.fromJSON(JSON.parse(selectedPhoneBookValue));
+    return phonebook;
+  }
+  else {
+    return EMPTY_PHONEBOOK;
+  }
 }
 
 
@@ -154,9 +172,7 @@ function replacePhoneNumbers() {
     ui.alert("EmptyPhonebookError: Phonebook is currently empty, please select one of the sheets as phonebook.");
   }
   else{
-    let phonebook = new Phonebook();
-    phonebook.fromJSON(getSelectedPhonebook());
-    phonebook.replacePhoneNumbers(sheet)
+    let phonebook = getSelectedPhonebook();
+    phonebook.replacePhoneNumbers(sheet);
   }
 }
-
