@@ -63,8 +63,28 @@ class Phonebook {
     }
 
     let range = targetSheet.getDataRange(); 
-
     let values = range.getValues();
+
+    values.forEach((row) => {
+      row[0] = this.lookUpName(row[0]);
+      row[1] = this.lookUpName(row[1])
+    })
+
+    range.setValues(values)
+  }
+
+  /**
+   * Method text style (fontSize, fontColor, backgroundColor) of
+   * a cell with corresponding style stored in the phone book.
+   */
+  replaceTextStyles(targetSheet) {
+    if (!targetSheet) {
+      throw `Invalid target sheet ${targetSheet}.`;
+    }
+
+    let range = targetSheet.getDataRange(); 
+    let values = range.getValues();
+
     let fontSizes = range.getFontSizes();
     let fontColors = range.getFontColorObjects();
     let backgrounds = range.getBackgrounds();
@@ -79,12 +99,8 @@ class Phonebook {
       fontSizes[i][1] = textStyle.fontSize;
       fontColors[i][1] = textStyle.fontColor;
       backgrounds[i][1] = textStyle.backgroundColor;
-
-      values_row[0] = this.lookUpName(values_row[0]);
-      values_row[1] = this.lookUpName(values_row[1]);
     });
 
-    range.setValues(values);
     range.setFontSizes(fontSizes);
     range.setFontColors(fontColors);
     range.setBackgrounds(backgrounds);
@@ -192,6 +208,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu("NoPixel Phonebook")
   .addItem("Select Phonebook", "selectPhonebook")
   .addItem("Replace Phone Numbers", "replacePhoneNumbers")
+  .addItem("Replace Phone Numbers (Apply Text Styles)", "replacePhoneNumbersApplyTextStyles")
   .addToUi();
 
   setSelectedPhonebook(EMPTY_PHONEBOOK);
@@ -201,37 +218,76 @@ function onOpen() {
 const EMPTY_PHONEBOOK = -1;
 
 
-function selectPhonebook() {
-  let ui = SpreadsheetApp.getUi();
-  let phonebookSheetName = ui.prompt("Enter phonebook sheet name.").getResponseText();
-
-  let sheet = SpreadsheetApp.getActive().getSheetByName(phonebookSheetName);
-
-  if (sheet == null) {
-    setSelectedPhonebook(EMPTY_PHONEBOOK);
-    ui.alert(`InvalidSheetName: Sheet with name ${phonebookSheetName} was not found.`);
-  }
-  else{
-    setSelectedPhonebook(new Phonebook(sheet));
-    ui.alert(`Phonebook "${phonebookSheetName}" was created successfully.`);
-  }
-}
-
-
-function replacePhoneNumbers() {
-  let ui = SpreadsheetApp.getUi();
-  let targetSheetName = ui.prompt("Enter target sheet name.").getResponseText();
-
+/**
+ * Function prompts the user for a name of a sheet in the Google Sheets spreadsheet.
+ * The function returns selected sheet if given name exists, null otherwise.
+ */
+function selectSheetPrompt(ui, message) {
+  let targetSheetName = ui.prompt(message).getResponseText();
   let sheet = SpreadsheetApp.getActive().getSheetByName(targetSheetName);
 
   if (sheet == null) {
     ui.alert(`InvalidSheetName: Sheet with name ${targetSheetName} was not found.`);
   }
-  else if (getSelectedPhonebook() == EMPTY_PHONEBOOK){
+
+  return sheet;
+}
+
+/**
+ * Function prompts the user for a name of a sheet in the Google Sheets spreadsheet.
+ * The function returns selected sheet if given name exists, null otherwise.
+ */
+function selectPhonebook() {
+  let ui = SpreadsheetApp.getUi();
+  let sheet = selectSheetPrompt(ui, "Enter phonebook sheet name.");
+
+  if (sheet == null) {
+    return;
+  }
+
+  setSelectedPhonebook(new Phonebook(sheet));
+  ui.alert(`Phonebook was created successfully.`);
+}
+
+/**
+ * Function replaces phone numbers with corresponding names from the phonebook
+ * in the target sheet.
+ */
+function replacePhoneNumbers() {
+  let ui = SpreadsheetApp.getUi();
+  let sheet = selectSheetPrompt(ui, "Enter target sheet name.");
+
+  if (sheet == null) {
+    return;
+  }
+  
+  if (getSelectedPhonebook() == EMPTY_PHONEBOOK){
+    ui.alert("EmptyPhonebookError: Phonebook is currently empty, please select one of the sheets as phonebook.");
+  }
+  else {
+    let phonebook = getSelectedPhonebook();
+    phonebook.replacePhoneNumbers(sheet);
+  }
+}
+
+/**
+ * Function replaces phone numbers with corresponding names from the phonebook
+ * in the target sheet and applies stored fontSize, fontColor, backgroundColor.
+ */
+function replacePhoneNumbersApplyTextStyles() {
+    let ui = SpreadsheetApp.getUi();
+  let sheet = selectSheetPrompt(ui, "Enter target sheet name.");
+  
+  if (sheet == null){
+    return;
+  }
+
+  if (getSelectedPhonebook() == EMPTY_PHONEBOOK){
     ui.alert("EmptyPhonebookError: Phonebook is currently empty, please select one of the sheets as phonebook.");
   }
   else{
     let phonebook = getSelectedPhonebook();
+    phonebook.replaceTextStyles(sheet);
     phonebook.replacePhoneNumbers(sheet);
   }
 }
