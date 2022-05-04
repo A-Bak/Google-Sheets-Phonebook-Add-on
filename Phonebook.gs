@@ -3,6 +3,7 @@ class Phonebook {
   constructor(sheetInstance = null) {
 
     this.phoneNumberDict = {};
+    this.styleDict = {};
 
     if (sheetInstance) {
       this.fillPhoneBook(sheetInstance);
@@ -10,17 +11,37 @@ class Phonebook {
   }
 
   /**
-   * Method fills the phonebook with pairs of (PHONE_NUMBER, NAME)
-   * from given Google Sheets sheet. The pairs of values must be
-   * in the first and second column respectively.
+   * Method fills the phonebook from given Google Sheets sheet.
+   * The pairs of values must be in the first and second column
+   * respectively.
+   * 
+   * The method fills phoneNumberDict with pairs [number, name]
+   * and styleDict with pairs [number, phoneNameStyle], where
+   * phoneNameStyle contains fontSize, fontColor, backgroundColor.
    */ 
   fillPhoneBook(phonebookSheet) {
     if (!phonebookSheet) {
-      throw `Invalid phonebook sheet ${phonebookSheet}.`
+      throw `Invalid phonebook sheet ${phonebookSheet}.`;
     }
+    let range = phonebookSheet.getDataRange();
 
-    let data = phonebookSheet.getDataRange().getValues();
-    data.forEach((row) => this.addPhoneNumber(row[0], row[1]));
+    let values = range.getValues();
+
+    let fontSizes = range.getFontSizes();
+    let fontColors = range.getFontColorObjects();
+    let backgrounds = range.getBackgrounds();
+
+    for (let i = 0; i < values.length; i++) {
+      this.addPhoneNumber(values[i][0], values[i][1]);
+
+      let phoneNameStyle = {
+        fontSize: fontSizes[i][1],
+        fontColor: fontColors[i][1].asRgbColor().asHexString(),
+        backgroundColor: backgrounds[i][1]
+      };
+
+      this.styleDict[values[i][0]] = phoneNameStyle;
+    }
   }
 
   /**
@@ -42,21 +63,37 @@ class Phonebook {
     }
 
     let range = targetSheet.getDataRange(); 
-    let values = range.getValues();
 
-    for (let i = 0; i < values.length; i++) {
-      values[i][0] = this.replace(values[i][0]);
-      values[i][1] = this.replace(values[i][1]);
-    }
+    let values = range.getValues();
+    let fontSizes = range.getFontSizes();
+    let fontColors = range.getFontColorObjects();
+    let backgrounds = range.getBackgrounds();
+
+    values.forEach( (values_row, i) => {
+      let textStyle = this.lookUpStyle(values_row[0]);
+      fontSizes[i][0] = textStyle.fontSize;
+      fontColors[i][0] = textStyle.fontColor;
+      backgrounds[i][0] = textStyle.backgroundColor;
+
+      textStyle = this.lookUpStyle(values_row[1]);
+      fontSizes[i][1] = textStyle.fontSize;
+      fontColors[i][1] = textStyle.fontColor;
+      backgrounds[i][1] = textStyle.backgroundColor;
+
+      values_row[0] = this.lookUpName(values_row[0]);
+      values_row[1] = this.lookUpName(values_row[1]);
+    });
 
     range.setValues(values);
+    range.setFontSizes(fontSizes);
+    range.setFontColors(fontColors);
+    range.setBackgrounds(backgrounds);
   }
   
   /**
-   * Method replaces a single phone number entry with correspoinding
-   * name in the phonebook if possible. 
+   * Method returns the name associated with a phone number.
    */
-  replace(number) {
+  lookUpName(number) {
     if (this.phoneNumberDict[number]) {
       return this.phoneNumberDict[number];
     }
@@ -66,17 +103,39 @@ class Phonebook {
   }
 
   /**
+   * Method returns the text style associated with a phone number.
+   */
+  lookUpStyle(number) {
+    if (this.styleDict[number]) {
+      return this.styleDict[number];
+    }
+    else {
+      return {
+        fontSize: 10,
+        fontColor: '#000000',
+        backgroundColor: '#ffffff'
+      }
+    }
+  }
+
+  /**
    * Method serialized Phonebook object to a JSON string.
    */
   toJSON() {
-    return JSON.stringify(this.phoneNumberDict);
+    let data = {
+      phoneNumberDict: this.phoneNumberDict,
+      styleDict: this.styleDict
+    }
+
+    return JSON.stringify(data);
   }
 
   /**
    * Method deserializes Phonebook object from a JSON string.
    */
   fromJSON(jsonString) {
-    this.phoneNumberDict = jsonString;
+    this.phoneNumberDict = jsonString.phoneNumberDict
+    this.styleDict = jsonString.styleDict
   }
 }
 
@@ -109,7 +168,7 @@ function getSelectedPhonebook() {
   let scriptProperties = PropertiesService.getScriptProperties();
   let selectedPhoneBookValue = scriptProperties.getProperty('selectedPhoneBook');
 
-  if (selectedPhoneBookValue != EMPTY_PHONEBOOK) {
+  if (selectedPhoneBookValue != null && selectedPhoneBookValue != EMPTY_PHONEBOOK) {
     let phonebook = new Phonebook();
     phonebook.fromJSON(JSON.parse(selectedPhoneBookValue));
     return phonebook;
